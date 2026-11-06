@@ -168,7 +168,9 @@ API server (443) + DNS, no ingress.
 dedicated ServiceAccount, minimal ClusterRole (see RBAC above), hardened
 single-replica Deployment, egress-only NetworkPolicy (API server TCP/443 +
 kube-dns UDP/TCP 53). `deploy/overlays/kind` retags the image for local e2e.
-The container image is a static musl binary in a distroless image (`Dockerfile`).
+The container image is a static musl binary in a distroless image (`Dockerfile`),
+built for `linux/amd64` and `linux/arm64` and published to the project's GHCR
+repo (`ghcr.io/nerzhul/home-cloud-controller`) by `.github/workflows/docker.yml`.
 
 Runtime mode: in-cluster by default (the ServiceAccount token is mounted
 automatically); an explicit `--kubeconfig` / `KUBECONFIG` pointing at a

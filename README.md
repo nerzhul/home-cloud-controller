@@ -65,6 +65,13 @@ single-replica Deployment, egress-only NetworkPolicy) and
 `deploy/overlays/kind` (image retag for local e2e). The image is a static musl
 binary in a distroless image (`Dockerfile`).
 
+The workflow `.github/workflows/docker.yml` builds the image for `linux/amd64`
+and `linux/arm64` and pushes it to the project's own GHCR repo
+(`ghcr.io/nerzhul/home-cloud-controller`): tag `latest` on pushes to `main`,
+semver tags on `v*` tags, plus the short SHA. It authenticates with the
+built-in `GITHUB_TOKEN` (`packages: write`). Pull requests build both
+arches but do not push.
+
 The Deployment wires kubelet `livenessProbe` (`/healthz`) and
 `readinessProbe` (`/readyz`) on the `health` port 8080 (served by
 `src/health.rs`); readiness stays 503 until the node cache and the initial
