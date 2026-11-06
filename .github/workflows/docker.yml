@@ -92,11 +92,15 @@ jobs:
             type=sha,format=short
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
+      # metadata-action separates tags with newlines, so read them line by line;
+      # passing them via env also avoids injecting the expression into the script.
       - name: Push multi-arch manifest
+        env:
+          META_TAGS: ${{ steps.meta.outputs.tags }}
         run: |
           set -euo pipefail
-          for tag in ${{ steps.meta.outputs.tags }}; do
+          while IFS= read -r tag; do
             docker buildx imagetools create -t "${tag}" \
               "ghcr.io/${IMAGE_NAME}:amd64-${SHORT_SHA}" \
               "ghcr.io/${IMAGE_NAME}:arm64-${SHORT_SHA}"
-          done
+          done <<< "${META_TAGS}"
