@@ -1,0 +1,45 @@
+# Egress only to the API server (kube-system, kubeadm/kind layout) and to
+# kube-dns. For distributions where the apiserver pods are not labelled
+# k8s-app=kube-apiserver in kube-system, relax the first rule to allow TCP/443
+# to any destination.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: home-cloud-controller-manager
+  namespace: home-cloud
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: home-cloud-controller-manager
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # kubelet HTTP probes arrive from the node itself, not from a pod, so they
+    # cannot be matched with a podSelector; expose only the health port.
+    - ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-apiserver
+      ports:
+        - protocol: TCP
+          port: 443
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

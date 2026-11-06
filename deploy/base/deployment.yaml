@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: home-cloud-controller-manager
+  namespace: home-cloud
+  labels:
+    app.kubernetes.io/name: home-cloud-controller-manager
+spec:
+  # Single replica on purpose: two replicas could race on the approval patch.
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: home-cloud-controller-manager
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: home-cloud-controller-manager
+    spec:
+      serviceAccountName: home-cloud-controller-manager
+      # Default in-cluster mode: Kubernetes mounts the ServiceAccount token
+      # automatically, no kubeconfig needed. To use a mounted kubeconfig
+      # instead, add a read-only volume and set KUBECONFIG (or pass
+      # --kubeconfig) pointing at the mounted file, e.g.:
+      #   env: [{ name: KUBECONFIG, value: /etc/hcc/kubeconfig }]
+      #   volumes: [{ name: hcc-kubeconfig, secret: { secretName: hcc-kubeconfig } }]
+      #   volumeMounts: [{ name: hcc-kubeconfig, mountPath: /etc/hcc, readOnly: true }]
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: controller
+          image: home-cloud-controller-manager:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - --signer-name
+            - kubernetes.io/kube-apiserver-client-kubelet
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - name: health
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi

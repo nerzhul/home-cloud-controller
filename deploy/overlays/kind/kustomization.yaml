@@ -1,0 +1,11 @@
+# Local e2e overlay: image loaded into kind via `kind load docker-image`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+images:
+  - name: home-cloud-controller-manager
+    newName: home-cloud-controller-manager
+    newTag: dev
