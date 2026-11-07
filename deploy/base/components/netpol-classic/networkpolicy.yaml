@@ -1,7 +1,10 @@
-# Egress only to the API server (kube-system, kubeadm/kind layout) and to
-# kube-dns. For distributions where the apiserver pods are not labelled
-# k8s-app=kube-apiserver in kube-system, relax the first rule to allow TCP/443
-# to any destination.
+# Classic Kubernetes NetworkPolicy: egress only to the API server and to
+# kube-dns. The in-cluster client connects to the ClusterIP of the
+# `kubernetes` service, which kube-proxy DNATs to the control-plane endpoint.
+# CNIs evaluate egress policy either pre-DNAT (ClusterIP:443) or post-DNAT
+# (node IP, kubeadm default port 6443), and hostNetwork apiserver pods may
+# carry no `k8s-app=kube-apiserver` label at all, so a podSelector-only rule
+# misses them: allow TCP/443 and TCP/6443 to any destination.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -21,16 +24,14 @@ spec:
         - protocol: TCP
           port: 8080
   egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: kube-system
-          podSelector:
-            matchLabels:
-              k8s-app: kube-apiserver
-      ports:
+    # Any destination on 443/6443: covers the `kubernetes` service ClusterIP
+    # (pre-DNAT) and the control-plane node endpoint (post-DNAT), regardless
+    # of how the apiserver pods are labelled.
+    - ports:
         - protocol: TCP
           port: 443
+        - protocol: TCP
+          port: 6443
     - to:
         - namespaceSelector:
             matchLabels:

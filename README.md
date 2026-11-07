@@ -61,9 +61,14 @@ kind load docker-image home-cloud-controller-manager:dev --name <cluster-name>
 
 Stack layout: `deploy/base` (Namespace `home-cloud` with PodSecurity
 `restricted`, dedicated ServiceAccount, minimal ClusterRole, hardened
-single-replica Deployment, egress-only NetworkPolicy) and
-`deploy/overlays/kind` (image retag for local e2e). The image is a static musl
-binary in a distroless image (`Dockerfile`).
+single-replica Deployment; no NetworkPolicy in base) with netpol components
+under `deploy/base/components/` — `netpol-classic` (vanilla NetworkPolicy,
+egress TCP/443+6443 to the API server + kube-dns 53) and `netpol-cilium`
+(CiliumNetworkPolicy with the reserved `kube-apiserver` entity, which also
+matches hostNetwork apiservers without pod labels). Overlays select one:
+`deploy/overlays/netpol-classic`, `deploy/overlays/netpol-cilium`, and
+`deploy/overlays/kind` (image retag for local e2e, classic netpol). The image
+is a static musl binary in a distroless image (`Dockerfile`).
 
 The workflow `.github/workflows/docker.yml` builds the image for `linux/amd64`
 and `linux/arm64` and pushes it to the project's own GHCR repo
@@ -76,7 +81,8 @@ The Deployment wires kubelet `livenessProbe` (`/healthz`) and
 `readinessProbe` (`/readyz`) on the `health` port 8080 (served by
 `src/health.rs`); readiness stays 503 until the node cache and the initial
 CSR list have succeeded. The NetworkPolicy allows ingress on the health port
-only (kubelet probes come from the node, not a pod).
+only (kubelet probes come from the node, not a pod; in the Cilium flavor this
+is the `host`/`remote-node` entities).
 
 ## What it does
 

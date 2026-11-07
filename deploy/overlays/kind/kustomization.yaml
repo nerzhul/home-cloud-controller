@@ -5,6 +5,11 @@ kind: Kustomization
 resources:
   - ../../base
 
+# kindnet does not enforce NetworkPolicy, but keep the classic flavor so the
+# e2e render matches a standard cluster.
+components:
+  - ../../base/components/netpol-classic
+
 images:
   - name: home-cloud-controller-manager
     newName: home-cloud-controller-manager

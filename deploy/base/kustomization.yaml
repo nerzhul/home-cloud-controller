@@ -7,7 +7,9 @@ resources:
   - clusterrole.yaml
   - clusterrolebinding.yaml
   - deployment.yaml
-  - networkpolicy.yaml
+  # No NetworkPolicy in base: an overlay must pick exactly one via `components:`
+  # — components/netpol-classic (vanilla NetworkPolicy) or
+  # components/netpol-cilium (CiliumNetworkPolicy with the kube-apiserver entity).
 
 images:
   - name: ghcr.io/nerzhul/home-cloud-controller

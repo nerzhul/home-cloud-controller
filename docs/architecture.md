@@ -160,14 +160,21 @@ Pod `securityContext`: `runAsNonRoot`, non-root uid, `seccompProfile:
 RuntimeDefault`, `allowPrivilegeEscalation: false`, `drop: [ALL]`,
 `readOnlyRootFilesystem: true`, resource limits, PodSecurity `restricted`.
 Static musl binary in a distroless image. NetworkPolicy: egress only to the
-API server (443) + DNS, no ingress.
+API server (TCP/443 + TCP/6443) + kube-dns (53), ingress limited to the
+health port.
 
 ## Deployment
 
 `deploy/base` (kustomize): Namespace `home-cloud` (PodSecurity `restricted`),
 dedicated ServiceAccount, minimal ClusterRole (see RBAC above), hardened
-single-replica Deployment, egress-only NetworkPolicy (API server TCP/443 +
-kube-dns UDP/TCP 53). `deploy/overlays/kind` retags the image for local e2e.
+single-replica Deployment. Base ships no NetworkPolicy; an overlay picks
+exactly one component via `components:`: `components/netpol-classic`
+(vanilla NetworkPolicy, egress TCP/443+6443 to the API server + kube-dns 53)
+or `components/netpol-cilium` (CiliumNetworkPolicy using the reserved
+`kube-apiserver` entity, which also matches hostNetwork apiservers without
+pod labels). Overlays: `deploy/overlays/netpol-classic`,
+`deploy/overlays/netpol-cilium`, and `deploy/overlays/kind` (image retag for
+local e2e, classic netpol).
 The container image is a static musl binary in a distroless image (`Dockerfile`),
 built for `linux/amd64` and `linux/arm64` and published to the project's GHCR
 repo (`ghcr.io/nerzhul/home-cloud-controller`) by `.github/workflows/docker.yml`.

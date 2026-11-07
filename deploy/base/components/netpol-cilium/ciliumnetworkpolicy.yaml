@@ -1,0 +1,43 @@
+# Cilium variant: the reserved `kube-apiserver` entity also matches an API
+# server running hostNetwork/hostPort on a control-plane node with no
+# `k8s-app=kube-apiserver` pod label (Cilium derives it from the endpoints of
+# the `kubernetes` service in the default namespace), which a vanilla
+# podSelector rule cannot. DNS goes through the reserved `kube-dns` entity.
+# Requires the cilium.io/v2 CRDs (CiliumNetworkPolicy) to be installed.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: home-cloud-controller-manager
+  namespace: home-cloud
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: home-cloud-controller-manager
+  ingress:
+    # kubelet HTTP probes arrive from the node itself, not from a pod.
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+  egress:
+    # Any port the apiserver may listen on: 443 pre-DNAT on the `kubernetes`
+    # service ClusterIP, 6443 post-DNAT on the control-plane node (kubeadm).
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "6443"
+              protocol: TCP
+    - toEntities:
+        - kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP

@@ -38,6 +38,13 @@ pub fn build_client(config: &Config) -> Result<Client, ClientError> {
             }
             Ok(Client::try_from(kubeconfig)?)
         }
-        None => Ok(Client::try_from(KubeClientConfig::incluster()?)?),
+        None => {
+            let incluster = KubeClientConfig::incluster()?;
+            // Log the target API server URL so a later "client error (Connect)"
+            // is immediately attributable to network (NetworkPolicy, routes)
+            // rather than to the token or the CA bundle.
+            tracing::info!(cluster_url = %incluster.cluster_url, "in-cluster config loaded");
+            Ok(Client::try_from(incluster)?)
+        }
     }
 }

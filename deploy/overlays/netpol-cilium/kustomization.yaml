@@ -1,0 +1,10 @@
+# Cilium flavor: CiliumNetworkPolicy with the reserved kube-apiserver entity,
+# which also matches hostNetwork apiservers without pod labels.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+components:
+  - ../../base/components/netpol-cilium

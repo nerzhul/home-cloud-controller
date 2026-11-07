@@ -1,0 +1,10 @@
+# Vanilla NetworkPolicy flavor: for clusters whose CNI enforces the standard
+# networking.k8s.io/v1 NetworkPolicy.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+components:
+  - ../../base/components/netpol-classic
