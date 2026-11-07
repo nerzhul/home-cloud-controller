@@ -2,7 +2,8 @@
 # server running hostNetwork/hostPort on a control-plane node with no
 # `k8s-app=kube-apiserver` pod label (Cilium derives it from the endpoints of
 # the `kubernetes` service in the default namespace), which a vanilla
-# podSelector rule cannot. DNS goes through the reserved `kube-dns` entity.
+# podSelector rule cannot. DNS goes to the kube-dns pods in kube-system via
+# toEndpoints (there is no reserved `kube-dns` entity in current Cilium).
 # Requires the cilium.io/v2 CRDs (CiliumNetworkPolicy) to be installed.
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -33,8 +34,12 @@ spec:
               protocol: TCP
             - port: "6443"
               protocol: TCP
-    - toEntities:
-        - kube-dns
+    # DNS: kube-dns pods live in kube-system; the special namespace label key
+    # restricts the endpoint selector to that namespace.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: coredns
       toPorts:
         - ports:
             - port: "53"
