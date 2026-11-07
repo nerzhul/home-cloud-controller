@@ -33,7 +33,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: controller
-          image: home-cloud-controller-manager:latest
+          image: ghcr.io/nerzhul/home-cloud-controller:latest
           imagePullPolicy: IfNotPresent
           args:
             - --signer-name

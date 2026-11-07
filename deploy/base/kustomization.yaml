@@ -10,6 +10,5 @@ resources:
   - networkpolicy.yaml
 
 images:
-  - name: home-cloud-controller-manager
-    newName: home-cloud-controller-manager
+  - name: ghcr.io/nerzhul/home-cloud-controller
     newTag: latest
